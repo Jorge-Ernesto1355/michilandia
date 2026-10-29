@@ -39,3 +39,32 @@ export async function POST(request: Request) {
     return fail("No pudimos crear el producto.", 500);
   }
 }
+
+export async function DELETE(request: Request) {
+  if (!await getAdminSession()) return fail("No autorizado.", 403);
+  const id = new URL(request.url).searchParams.get("id")?.trim();
+  if (!id) return fail("Falta el producto que quieres eliminar.");
+
+  const product = await prisma.product.findUnique({
+    where: { id },
+    select: { id: true, name: true, _count: { select: { orderItems: true } } },
+  });
+  if (!product) return fail("El producto no existe.", 404);
+
+  // Los pedidos conservan una referencia al producto para no perder el historial.
+  if (product._count.orderItems > 0) {
+    await prisma.product.update({ where: { id }, data: { active: false, featured: false } });
+    return NextResponse.json({ archived: true, productName: product.name });
+  }
+
+  try {
+    await prisma.$transaction(async (transaction) => {
+      await transaction.cartItem.deleteMany({ where: { productId: id } });
+      await transaction.product.delete({ where: { id } });
+    });
+    return NextResponse.json({ deleted: true, productName: product.name });
+  } catch (error) {
+    console.error("No se pudo eliminar el producto", error);
+    return fail("No pudimos eliminar el producto.", 409);
+  }
+}
