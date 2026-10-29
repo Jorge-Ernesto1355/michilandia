@@ -1,5 +1,28 @@
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
+## Base de datos y autenticación
+
+Michilandia usa Prisma sobre PostgreSQL de Supabase y Better Auth para autenticación. La conexión `DATABASE_URL` debe mantenerse únicamente en el servidor; nunca la expongas como una variable `NEXT_PUBLIC_*`.
+
+1. Copia `.env.example` a `.env` y completa `DATABASE_URL`, `BETTER_AUTH_SECRET` y las URLs de la aplicación.
+2. En Supabase, usa la URL de conexión de Supavisor en modo sesión, normalmente el puerto `5432`, para crear migraciones.
+3. Genera el cliente y valida el schema:
+
+```bash
+npm run db:generate
+npm run db:validate
+```
+
+4. Crea y aplica la migración inicial:
+
+```bash
+npm run db:migrate
+```
+
+En producción aplica las migraciones versionadas con `npm run db:deploy`. La ruta `/api/auth/*` ya está conectada a Better Auth; las operaciones de registro, inicio de sesión, sesión y cierre de sesión usan las tablas `user`, `session`, `account` y `verification`.
+
+Prisma accede directamente a PostgreSQL y no pasa por la Data API de Supabase. Si más adelante expones tablas mediante la Data API, define políticas RLS separadas y no uses `DATABASE_URL` en el navegador.
+
 ## Getting Started
 
 First, run the development server:

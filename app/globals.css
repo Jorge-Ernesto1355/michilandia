@@ -1,26 +1,14 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
-}
+:root { --font-jakarta: "Plus Jakarta Sans", Arial, sans-serif; --font-nunito: "Nunito Sans", Arial, sans-serif; --primary: #8f3654; --primary-strong: #70263f; --secondary: #ffe5eb; --tertiary: #ed6482; --neutral: #45343e; --muted: #806570; --background: #fff8f8; --surface: #ffffff; --surface-warm: #fff1ed; --border: #efd9df; --border-strong: #e7b9c6; --success: #397b5c; --shadow-soft: 0 10px 28px rgba(112, 38, 63, .08); }
+.font-head { font-family: var(--font-jakarta); }
+.font-body { font-family: var(--font-nunito); }
+* { box-sizing: border-box; }
+html { background: var(--background); scroll-behavior: smooth; }
+body { margin: 0; color: var(--neutral); background: var(--background); font-family: var(--font-nunito); font-size: 16px; }
+button, a, input, select { -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
+button, a { cursor: pointer; }
+button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible { outline: 3px solid #d64e70; outline-offset: 3px; }
+::selection { background: var(--secondary); color: var(--primary-strong); }
+select { color-scheme: light; }
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; animation-duration: .01ms !important; } }
