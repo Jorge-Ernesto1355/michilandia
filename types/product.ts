@@ -1,4 +1,4 @@
-export type ProductCategory = "Collares" | "Ropita y Lazos" | "Juguetes" | "Hogar" | "Transportadoras";
+export type ProductCategory = string;
 
 export type Product = {
   id: string;

@@ -17,7 +17,7 @@ function formatCardNumber(value: string) { return onlyDigits(value, 16).replace(
 export default function CheckoutForm() {
   const router = useRouter();
   const cart = useCart();
-  const items = useMemo(() => getCartProducts(cart.lines), [cart.lines]);
+  const items = useMemo(() => getCartProducts(cart.lines, cart.products), [cart.lines, cart.products]);
   const [cardholder, setCardholder] = useState("");
   const [cardNumber, setCardNumber] = useState("");
   const [expiry, setExpiry] = useState("");

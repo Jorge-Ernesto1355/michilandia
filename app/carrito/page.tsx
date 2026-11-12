@@ -17,10 +17,10 @@ export default function CartPage() {
   const cart = useCart();
   const router = useRouter();
   const { data: session } = useSession();
-  const [couponInput, setCouponInput] = useState("MICHI10");
+  const [couponInput, setCouponInput] = useState("");
   const [message, setMessage] = useState("");
   const [showAuthModal, setShowAuthModal] = useState(false);
-  const items = getCartProducts(cart.lines);
+  const items = getCartProducts(cart.lines, cart.products);
   const progress = getProgress(cart.subtotalCents);
   const submitCoupon = () => {
     if (cart.applyCoupon(couponInput)) { setMessage("MICHI10 aplicado: -10% off"); sileo.success({ title: "Cupón aplicado", description: "Tu descuento MICHI10 está activo." }); }
