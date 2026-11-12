@@ -63,6 +63,9 @@ export async function POST(request: Request) {
     country: "MX",
   };
 
+  if (addressData.phone && !/^\d{10}$/.test(addressData.phone)) {
+    return errorResponse("El teléfono debe tener exactamente 10 dígitos.");
+  }
   if (!addressData.recipientName || !addressData.line1 || !addressData.city || !addressData.state || !/^\d{5}$/.test(addressData.postalCode)) {
     return errorResponse("Completa el nombre, dirección, ciudad, estado y código postal de entrega.");
   }

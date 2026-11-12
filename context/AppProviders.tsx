@@ -45,15 +45,51 @@ export function AppProviders({ children }: { children: ReactNode }) {
 }
 export function useCart() { const context = useContext(CartContext); if (!context) throw new Error("useCart debe usarse dentro de AppProviders"); return context; }
 
-type FavoritesContextValue = { favorites: string[]; ready: boolean; isFavorite: (id: string) => boolean; toggleFavorite: (id: string) => void };
+type FavoritesContextValue = { favorites: string[]; ready: boolean; isFavorite: (id: string) => boolean; toggleFavorite: (id: string) => void; replaceFavorites: (ids: string[]) => void };
 const FavoritesContext = createContext<FavoritesContextValue | null>(null);
+const uniqueIds = (ids: string[]) => [...new Set(ids)];
 export function FavoritesProvider({ children }: { children: ReactNode }) {
   const [favorites, setFavorites] = useState<string[]>([]);
   const [ready, setReady] = useState(false);
-  useEffect(() => { try { const saved = JSON.parse(localStorage.getItem(FAVORITES_STORAGE_KEY) || "[]"); if (Array.isArray(saved)) setFavorites(saved.filter((id): id is string => typeof id === "string")); } catch {} fetch("/api/favorites").then((response) => response.ok ? response.json() : null).then((result: { productIds?: string[] } | null) => { if (result?.productIds) setFavorites(result.productIds); }).catch(() => undefined).finally(() => setReady(true)); }, []);
+  useEffect(() => {
+    let cancelled = false;
+    const loadFavorites = async () => {
+      let localIds: string[] = [];
+      try {
+        const saved = JSON.parse(localStorage.getItem(FAVORITES_STORAGE_KEY) || "[]");
+        if (Array.isArray(saved)) localIds = uniqueIds(saved.filter((id): id is string => typeof id === "string"));
+      } catch { /* storage can be corrupted; use the safe defaults */ }
+
+      let validProductIds: Set<string> | null = null;
+      try {
+        const productsResponse = await fetch("/api/products", { cache: "no-store" });
+        if (productsResponse.ok) {
+          const result = await productsResponse.json() as { products?: Product[] };
+          validProductIds = new Set((result.products || []).map((product) => product.id));
+        }
+      } catch { /* keep local favorites if the catalog is temporarily unavailable */ }
+
+      let nextFavorites = validProductIds ? localIds.filter((id) => validProductIds?.has(id)) : localIds;
+      try {
+        const response = await fetch("/api/favorites", { cache: "no-store" });
+        if (response.ok) {
+          const result = await response.json() as { productIds?: string[] };
+          if (result.productIds) nextFavorites = uniqueIds(result.productIds.filter((id) => !validProductIds || validProductIds.has(id)));
+        }
+      } catch { /* guests use their local favorites */ }
+
+      if (!cancelled) {
+        setFavorites(nextFavorites);
+        setReady(true);
+      }
+    };
+    void loadFavorites();
+    return () => { cancelled = true; };
+  }, []);
   useEffect(() => { if (ready) localStorage.setItem(FAVORITES_STORAGE_KEY, JSON.stringify(favorites)); }, [favorites, ready]);
   const toggleFavorite = (id: string) => { const exists = favorites.includes(id); setFavorites((current) => exists ? current.filter((item) => item !== id) : [...current, id]); fetch("/api/favorites", { method: exists ? "DELETE" : "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ productId: id }) }).catch(() => undefined); };
-  return <FavoritesContext.Provider value={{ favorites, ready, isFavorite: (id) => favorites.includes(id), toggleFavorite }}>{children}</FavoritesContext.Provider>;
+  const replaceFavorites = (ids: string[]) => { const nextIds = uniqueIds(ids); setFavorites((current) => current.length === nextIds.length && current.every((id, index) => id === nextIds[index]) ? current : nextIds); };
+  return <FavoritesContext.Provider value={{ favorites, ready, isFavorite: (id) => favorites.includes(id), toggleFavorite, replaceFavorites }}>{children}</FavoritesContext.Provider>;
 }
 export function useFavorites() { const context = useContext(FavoritesContext); if (!context) throw new Error("useFavorites debe usarse dentro de FavoritesProvider"); return context; }
 
